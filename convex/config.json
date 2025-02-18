@@ -1,0 +1,69 @@
+{
+  "music": {
+    "audioStorageId": "kg2dw584ac4gcnc63h0f0hkpv97akbe5",
+    "coverStorageId": "kg2f8q528ety7pwr5exj8rqhv57aj38h",
+    "description": "music",
+    "status": "pending",
+    "title": "music",
+    "visibility": "string"
+  },
+  "map": {
+    "storageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+    "title": "string",
+    "description": "string",
+    "status": "string",
+    "visibility": "string",
+    "width": 1000,
+    "height": 1000
+  },
+  "agents": [
+    {
+      "level": 1,
+      "avatarStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "spriteStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "prompt": "string",
+      "name": "string",
+      "description": "string",
+      "status": "string",
+      "visibility": "string"
+    },
+    {
+      "level": 1,
+      "avatarStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "spriteStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "prompt": "string",
+      "name": "string",
+      "description": "string",
+      "status": "string",
+      "visibility": "string"
+    },
+    {
+      "level": 1,
+      "avatarStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "spriteStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "prompt": "string",
+      "name": "string",
+      "description": "string",
+      "status": "string",
+      "visibility": "string"
+    },
+    {
+      "level": 1,
+      "avatarStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "spriteStorageId": "kg289xxs1d2fechcmhjacnacp17aatps",
+      "prompt": "string",
+      "name": "string",
+      "description": "string",
+      "status": "string",
+      "visibility": "string"
+    }
+  ],
+  "game": {
+    "backgroundStorageId": "string",
+    "logoStorageId": "string",
+    "twitterHandle": "string",
+    "title": "string",
+    "description": "string",
+    "visibility": "string"
+  }
+}
