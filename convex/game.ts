@@ -1,5 +1,5 @@
 import { v } from 'convex/values';
-import { query, internalMutation, action } from './_generated/server';
+import { query, internalMutation, action, internalQuery, mutation, ActionCtx } from './_generated/server';
 import { api, internal } from './_generated/api';
 import { getApiClient } from './util';
 
@@ -11,9 +11,28 @@ export const getGame = query({
   },
 });
 
+export const generateUploadUrl = mutation(async (ctx) => {
+  return await ctx.storage.generateUploadUrl();
+});
+
+export const serveFileUrl = query({
+  args: {
+    storageId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    return await ctx.storage.getUrl(args.storageId);
+  },
+});
+
 export const createAgent = action({
   args: {
     name: v.string(),
+    prompt: v.string(),
+    description: v.string(),
+    avatarStorageId: v.string(),
+    spriteStorageId: v.string(),
+    status: v.string(),
+    visibility: v.string(),
   },
   handler: async (ctx, args) => {
     const game = await ctx.runQuery(api.game.getGame);
@@ -26,26 +45,94 @@ export const createAgent = action({
     if (oldAgent) {
       throw new Error('Agent already exists');
     }
+
+    const avatarStorageId = await uploadFile(ctx, args.avatarStorageId, 'avatar.png');
+    const spriteStorageId = await uploadFile(ctx, args.spriteStorageId, 'sprite.png');
+
     const agent = await getApiClient().createAgent({
       name: args.name,
-      avatarStorageId: game.agentResources[0].agentAvatarStorageId,
-      spriteStorageId: game.agentResources[0].agentAvatarStorageId,
-      prompt: game.agentResources[0].agentConfig.description,
-      description: game.agentResources[0].agentConfig.description,
-      status: game.agentResources[0].agentConfig.status,
-      visibility: game.agentResources[0].agentConfig.visibility,
-    });
-
-    await ctx.runAction(api.game.syncGame, {
-      gameId: game.gameId,
+      avatarStorageId,
+      spriteStorageId,
+      prompt: args.prompt,
+      description: args.description,
+      status: args.status,
+      visibility: args.visibility,
     });
 
     const id = (await ctx.runMutation(internal.game.saveAgent, {
       name: args.name,
       agentId: agent.id,
-      level: game.agentResources[0].level,
+      prompt: args.prompt,
+      description: args.description,
+      avatarStorageId: args.avatarStorageId,
+      spriteStorageId: args.spriteStorageId,
+      status: args.status,
+      visibility: args.visibility,
     })) as string;
+
+    await ctx.runAction(api.game.syncGame, {
+      gameId: game.gameId,
+    });
     return id;
+  },
+});
+
+export const updateAgent = action({
+  args: {
+    id: v.id('agents'),
+    name: v.string(),
+    prompt: v.string(),
+    description: v.string(),
+    avatarStorageId: v.string(),
+    spriteStorageId: v.string(),
+    status: v.string(),
+    visibility: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const game = await ctx.runQuery(api.game.getGame);
+    if (!game) {
+      throw new Error('Game not found');
+    }
+    const agent = await ctx.runQuery(api.game.getAgentById, {
+      id: args.id,
+    });
+    if (!agent) {
+      throw new Error('Agent not found');
+    }
+    let avatarStorageId = undefined;
+    if (args.avatarStorageId !== agent.avatarStorageId) {
+      avatarStorageId = await uploadFile(ctx, args.avatarStorageId, 'avatar.png');
+    }
+    let spriteStorageId = undefined;
+    if (args.spriteStorageId !== agent.spriteStorageId) {
+      spriteStorageId = await uploadFile(ctx, args.spriteStorageId, 'sprite.png');
+    }
+    await getApiClient().updateAgent({
+      id: agent.agentId,
+      updates: {
+        name: args.name,
+        avatarStorageId,
+        spriteStorageId,
+        prompt: args.prompt,
+        description: args.description,
+        status: args.status,
+        visibility: args.visibility,
+      },
+    });
+    await ctx.runMutation(internal.game.saveAgent, {
+      id: args.id,
+      agentId: agent.agentId,
+      name: args.name,
+      prompt: args.prompt,
+      description: args.description,
+      avatarStorageId: args.avatarStorageId,
+      spriteStorageId: args.spriteStorageId,
+      status: args.status,
+      visibility: args.visibility,
+    });
+    await ctx.runAction(api.game.syncGame, {
+      gameId: game.gameId,
+    });
   },
 });
 
@@ -72,38 +159,6 @@ export const getAgentByName = query({
   },
 });
 
-export const upgradeAgent = action({
-  args: {
-    id: v.id('agents'),
-  },
-  handler: async (ctx, args) => {
-    const game = await ctx.runQuery(api.game.getGame);
-    if (!game) {
-      throw new Error('Game not found');
-    }
-    const agent = await ctx.runQuery(api.game.getAgentById, {
-      id: args.id,
-    });
-    if (!agent) {
-      throw new Error('Agent not found');
-    }
-    const nextLevel = agent.level + 1;
-    const nextAgent = game.agentResources.find((o) => o.level === nextLevel);
-    if (!nextAgent) {
-      throw new Error('Next agent not found');
-    }
-    await getApiClient().updateAgent({
-      id: agent.agentId,
-      updates: {
-        ...nextAgent.agentConfig,
-      },
-    });
-    await ctx.runAction(api.game.syncGame, {
-      gameId: game.gameId,
-    });
-  },
-});
-
 export const syncGame = action({
   args: { gameId: v.string() },
   handler: async (ctx, args) => {
@@ -112,12 +167,21 @@ export const syncGame = action({
     if (!remoteGame) {
       throw new Error('Remote game not found');
     }
+    const agents = await ctx.runQuery(internal.game.getAllAgents);
+    const agentIds = agents.map((o) => o.agentId);
     await getApiClient().updateGame({
-      id: remoteGame._id,
+      id: args.gameId,
       updates: {
-        ...remoteGame,
+        agentIds,
       },
     });
+  },
+});
+
+export const getAllAgents = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    return await ctx.db.query('agents').collect();
   },
 });
 
@@ -126,20 +190,35 @@ export const saveAgent = internalMutation({
     id: v.optional(v.id('agents')),
     name: v.string(),
     agentId: v.string(),
-    level: v.number(),
+    prompt: v.string(),
+    description: v.string(),
+    avatarStorageId: v.string(),
+    spriteStorageId: v.string(),
+    status: v.string(),
+    visibility: v.string(),
   },
   handler: async (ctx, args) => {
     if (args.id) {
       await ctx.db.patch(args.id, {
         name: args.name,
         agentId: args.agentId,
-        level: args.level,
+        prompt: args.prompt,
+        description: args.description,
+        avatarStorageId: args.avatarStorageId,
+        spriteStorageId: args.spriteStorageId,
+        status: args.status,
+        visibility: args.visibility,
       });
     } else {
       const id = await ctx.db.insert('agents', {
         name: args.name,
         agentId: args.agentId,
-        level: args.level,
+        prompt: args.prompt,
+        description: args.description,
+        avatarStorageId: args.avatarStorageId,
+        spriteStorageId: args.spriteStorageId,
+        status: args.status,
+        visibility: args.visibility,
       });
       return id;
     }
@@ -150,27 +229,18 @@ export const saveGameResources = internalMutation({
   args: {
     gameId: v.string(),
     gameName: v.string(),
-    agentResources: v.array(
-      v.object({
-        level: v.number(),
-        agentConfig: v.object({
-          name: v.string(),
-          description: v.string(),
-          avatarStorageId: v.string(),
-          spriteStorageId: v.string(),
-          status: v.string(),
-          visibility: v.string(),
-        }),
-        agentAvatarStorageId: v.string(),
-        agentSpriteStorageId: v.string(),
-      }),
-    ),
   },
   handler: async (ctx, args) => {
     ctx.db.insert('games', {
       gameId: args.gameId,
       gameName: args.gameName,
-      agentResources: args.agentResources,
     });
   },
 });
+
+async function uploadFile(ctx: ActionCtx, storageId: string, fileName: string) {
+  const file = await ctx.storage.get(storageId);
+  if (!file) throw new Error(`${storageId} not found`);
+  const res = await getApiClient().upload(file, fileName);
+  return res.storageId;
+}

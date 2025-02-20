@@ -1,10 +1,14 @@
-import { ApiClient } from "@damn-fun/sdk";
+import { ApiClient } from '@damn-fun/sdk';
+
+export function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export function getApiClient() {
   const baseUrl = process.env.SDK_BASE_URL;
   const apiKey = process.env.SDK_API_KEY;
   if (!baseUrl || !apiKey) {
-    throw new Error("SDK_BASE_URL and SDK_API_KEY must be set");
+    throw new Error('SDK_BASE_URL and SDK_API_KEY must be set');
   }
   return new ApiClient({ baseUrl, apiKey });
 }
