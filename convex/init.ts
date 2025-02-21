@@ -63,7 +63,7 @@ export const initGameResources = action({
   },
 });
 
-export async function uploadFile(ctx: ActionCtx, fileUrl: string, fileName: string) {
+export async function uploadFile(_: ActionCtx, fileUrl: string, fileName: string) {
   const response = await fetch(fileUrl);
   const file = await response.blob();
   if (!file) throw new Error(`${fileUrl} not found`);
