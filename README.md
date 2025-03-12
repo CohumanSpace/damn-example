@@ -1,50 +1,192 @@
-# React + TypeScript + Vite
+# DAMN.FUN SDK (Demo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+<div align="center">
+  <img src="./public/damn-fun-banner.png" alt="DAMN.FUN Banner" width="100%" />
+</div>
 
-Currently, two official plugins are available:
+DAMN SDK—DAMN.FUN's NodeJS Server SDK for deploying AI-native games powered Digimon Engine. This is a demo project for the DAMN.FUN SDK, showing how to use the SDK to integrate or create an AI-native game.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Quickstart
 
-## Expanding the ESLint configuration
+### Requirement
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+node > 18.19
 
-- Configure the top-level `parserOptions` property like this:
+### Install
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```
+npm install @damn-fun/sdk
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+### Get your API key
 
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
+Visit [damn.fun](https://damn.fun/)
 
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+### Create a client
+
+```typescript
+const baseUrl = 'https://node.damn.fun';
+const apiKey = 'your api key';
+const client = new ApiClient({ baseUrl, apiKey });
+```
+
+### Upload assets(png, jpg, mp3, etc.)
+
+```typescript
+const fileBuffer = fs.readFileSync('damn-logo.png');
+const blob = new Blob([fileBuffer], { type: 'image/png' });
+const uploadRes = await getApiClient().upload(blob, 'damn-logo.png');
+```
+
+### Create map
+
+```typescript
+client.createMap({
+  storageId: 'storage id from upload',
+  title: 'string',
+  description: 'string',
+  status: 'string',
+  visibility: 'string',
+  width: 1000,
+  height: 1000,
+});
+```
+
+### Update map
+
+```typescript
+client.updateMap({
+  id: 'map id',
+  updates: { title: 'new title' },
+});
+```
+
+### Map list
+
+```typescript
+client.getMapList();
+```
+
+### Create music
+
+```typescript
+client.createMusic({
+  audioStorageId: 'storage id from upload',
+  coverStorageId: 'storage id from upload',
+  description: 'string',
+  status: 'string',
+  title: 'string',
+  visibility: 'string',
+});
+```
+
+### Update music
+
+```typescript
+client.updateMusic({
+  id: 'music id',
+  updates: { title: 'new title' },
+});
+```
+
+### Music list
+
+```typescript
+client.getMusicList();
+```
+
+### Create agent
+
+```typescript
+client.createAgent({
+  avatarStorageId: 'storage id from upload',
+  spriteStorageId: 'storage id from upload',
+  prompt: 'string',
+  name: 'string',
+  description: 'string',
+  status: 'string',
+  visibility: 'string',
+});
+```
+
+### Update agent
+
+```typescript
+client.updateAgent({
+  id: 'agent id',
+  updates: { name: 'new name' },
+});
+```
+
+### Agent list
+
+```typescript
+client.getAgentList();
+```
+
+### Create game
+
+```typescript
+client.createGame({
+  mapId: 'map id',
+  agentIds: ['agent id', 'agent id'],
+  musicId: 'music id',
+  logoStorageId: 'storage id from upload',
+  backgroundStorageId: 'storage id from upload',
+  twitterHandle: 'string',
+  title: 'string',
+  description: 'string',
+  visibility: 'string',
+});
+```
+
+### Update game
+
+```typescript
+client.updateGame({
+  id: 'game id',
+  updates: { title: 'new title' },
+});
+```
+
+### Game list
+
+```typescript
+client.getGameList();
+```
+
+### Get world status
+
+```typescript
+client.gameData.getWorldStatus('game id');
+```
+
+### Get agent player list
+
+```typescript
+client.gameData.getAgentPlayerList('game id');
+```
+
+### Get human player list
+
+```typescript
+client.gameData.getHumanPlayerList('game id', { numItems: 10, cursor: null });
+```
+
+### Get player
+
+```typescript
+client.gameData.getPlayer('game id', 'player id like p:0');
+```
+
+### Get conversation list
+
+```typescript
+client.gameData.getConversationList('game id', { numItems: 10, cursor: null });
+```
+
+### Get message list
+
+```typescript
+client.gameData.getMessageList('conversation id like c:0');
 ```
